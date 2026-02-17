@@ -1,2 +1,0 @@
-# Turf
-Apuestas hipicas
