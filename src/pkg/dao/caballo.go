@@ -42,7 +42,7 @@ func (u *Caballo) Load2(s, a, b, d, e, f string, c int) {
 	u.Madre = f
 }
 
-func (p *Caballo) LoadDB() (int, string) {
+func (p *Caballo) LoadDB() (int64, string) {
 
 	db := fun.Acceso{}
 
@@ -53,7 +53,7 @@ func (p *Caballo) LoadDB() (int, string) {
 	}
 
 	var sqlStatement string
-	var res sql.Result
+	var res *sql.Row
 
 	var err error
 
@@ -70,19 +70,17 @@ func (p *Caballo) LoadDB() (int, string) {
 	msg = "No se ha podido concretar el alta. "
 	m := "Alta creada con exito"
 
-	sqlStatement = "INSERT INTO caballo  " +
-		" (nombre, fecha_nac, sexo, pelaje, padre, madre, peso) VALUES ($1, $2, $3, $4, $5, $6, $7);"
+	sqlStatement = "SELECT merge($1, $2, $3);"
 
-	res, err = db.Cliente.Exec(sqlStatement, p.Nombre, p.FechaNac, p.Sexo, p.Pelaje, p.Padre, p.Madre, p.Padre)
+	var idd int64
 
-	if err != nil {
+	res = db.Cliente.QueryRow(sqlStatement, p.Nombre, "", 3)
+	err = res.Scan(&idd)
 
-		fmt.Printf("\n %s error: %s", msg, err.Error())
-		return 0, msg
+	if err == nil {
+		return idd, m
 	} else {
-		i, _ := res.RowsAffected()
-		fmt.Printf("\n count: %d", int(i))
-		return 1, m
+		return 0, "falla al obtener id: " + err.Error()
 	}
 
 }

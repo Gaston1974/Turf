@@ -122,7 +122,7 @@ func HandlerPDF(w http.ResponseWriter, r *http.Request) {
 	if res == 1 {
 		funciones.ResponseWithJSON(w, 200, msg)
 	} else {
-		funciones.ResponseWithJSON(w, 400, "Achivo parseado no generado")
+		funciones.ResponseWithJSON(w, 400, msg)
 	}
 	//funciones.Log(msg, ".log.txt")
 

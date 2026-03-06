@@ -1,2 +1,16 @@
 http GET http://localhost:8080/v1/turf
 
+
+ALTER SEQUENCE jockey_id_seq RESTART WITH 1;
+
+
+delete from jockey;
+delete from caballo ;
+delete from cuidador ;
+delete from carrera_detalle ;
+delete from carrera;
+ALTER SEQUENCE jockey_id_seq RESTART WITH 1;
+ALTER SEQUENCE caballo_id_seq RESTART WITH 1;
+ALTER SEQUENCE cuidador_id_seq RESTART WITH 1;
+ALTER SEQUENCE carrera_detalle_id_seq RESTART WITH 1;
+ALTER SEQUENCE carrera_id_seq RESTART WITH 1;

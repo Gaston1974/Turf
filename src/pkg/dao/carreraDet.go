@@ -2,10 +2,10 @@ package dao
 
 type CarreraDet struct {
 	Nombre     string
-	Competidor string
-	Jockey     string
+	Competidor int
+	Jockey     int
 	Padre      string
 	Madre      string
-	Cuidador   string
+	Cuidador   int
 	Handicap   string
 }

@@ -68,14 +68,14 @@ func (p *Carrera) LoadDB() (int, string) {
 	m := "Alta creada con exito"
 
 	sqlStatement = "INSERT INTO carrera  " +
-		" (fecha, nombre, pista, distancia, descripcion) VALUES ($1, $2, $3, $4, $5);"
+		" (fecha, nombre, pista, distancia) VALUES ($1, $2, $3, $4);"
 
 	sqlStatement2 = "INSERT INTO carrera_detalle  " +
 		" (nombre, competidor, jockey, cuidador, handicap) VALUES ($1, $2, $3, $4, $5);"
 
 	sqlStatement3 = "DELETE RFOM carrera WHERE nombre = $1; "
 
-	res, err = db.Cliente.Exec(sqlStatement, p.Fecha, p.Nombre, p.Pista, p.Distancia, p.Descripcion)
+	res, err = db.Cliente.Exec(sqlStatement, p.Fecha, p.Nombre, p.Pista, p.Distancia)
 
 	if err != nil {
 

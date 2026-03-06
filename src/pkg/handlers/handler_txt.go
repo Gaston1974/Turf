@@ -19,10 +19,12 @@ func handlerTXT(ruta string, stdout string) (int, string) {
 	flag4 := 0
 	flag5 := 0
 	flag6 := 0
+	iii := 0
 	aux1 := 0
 	var nCarrera int64
 	nCarrera = 1
 	var nCarreras int64
+	var totaLines int64
 
 	f, err := os.Open(ruta)
 	if err != nil {
@@ -48,10 +50,18 @@ func handlerTXT(ruta string, stdout string) (int, string) {
 	for scannerP.Scan() {
 		line := scannerP.Text()
 
+		end := len(line)
+
 		if strings.Contains(line, "Processing") {
 
-			end := len(line)
 			nCarreras, _ = strconv.ParseInt(line[27:end-1], 10, 64)
+
+		}
+
+		if strings.Contains(line, "lines: ") {
+
+			totaLines, _ = strconv.ParseInt(strings.Trim(line[7:end], " "), 10, 64)
+			fmt.Printf("\n\n lines: %d ", totaLines)
 
 		}
 
@@ -64,12 +74,14 @@ func handlerTXT(ruta string, stdout string) (int, string) {
 
 	scanner := bufio.NewScanner(f)
 
-	var li int
+	li := 0
 	var index int
 	var l string
 
 	var car dao.Carrera
 	var cab dao.Caballo
+	var jock dao.Jockey
+	var cui dao.Cuidador
 	var carDet dao.CarreraDet
 
 	var carVec []dao.Carrera
@@ -79,7 +91,11 @@ func handlerTXT(ruta string, stdout string) (int, string) {
 		line := scanner.Text()
 		li++
 
-		fmt.Printf("\n linea: %d", li)
+		if strings.Contains(line, "Ñ") {
+			strings.ReplaceAll(line, "Ñ", "N")
+		}
+
+		//fmt.Printf("\n linea: %d", li)
 
 		if strings.Contains(line, "REUNION") {
 
@@ -159,7 +175,7 @@ func handlerTXT(ruta string, stdout string) (int, string) {
 
 			}
 
-			l = line[index+14:]
+			l = line[index+18:]
 
 			index = fun.NumberFinder(l, 0)
 
@@ -186,19 +202,52 @@ func handlerTXT(ruta string, stdout string) (int, string) {
 				flag5 = 0
 			}
 
+			// insert de caballos y recupero id
 			cab.Nombre = strings.Trim(l[:index], " ")
-			carDet.Nombre = strings.Trim(l[:index], " ")
+
+			id_3, m := cab.LoadDB()
+			if id_3 == 0 {
+				fmt.Printf("\n mesg: %s", m)
+			}
+
+			carDet.Competidor = int(id_3)
 			carDet.Handicap = strings.Trim(l[index:index+2], " ")
 
-			carDetVec = append(carDetVec, carDet)
+			l2 := strings.Trim(l[index+4:], " ")
 
-			l2 := strings.Trim(l[index+2:], " ")
+			// insert de jockeys y recupero id
+			jock.Nombre = strings.Trim(l2[:30], " ")
+			jock.Apellido, jock.Nombre, _ = strings.Cut(jock.Nombre, " ")
+			if fun.NumberFinder(jock.Apellido, 0) != -1 {
+				jock.Apellido, jock.Nombre, _ = strings.Cut(jock.Nombre, " ")
+			}
 
-			carDet.Jockey = strings.Trim(l2[:30], " ")
+			id_1, m := jock.LoadDB()
+			if id_1 == 0 {
+				fmt.Printf("\n mesg: %s", m)
+			}
+
+			// insert de cuidadores y recupero id
+			if line[iii-7:iii-6] == " " {
+				cui.Nombre = strings.Trim(line[iii-6:], " ")
+				cui.Apellido, cui.Nombre, _ = strings.Cut(cui.Nombre, " ")
+			}
+
+			cab.Padre = strings.Trim(line[30:iii-6], " ")
+
+			id_2, m := cui.LoadDB()
+			if id_2 == 0 {
+				fmt.Printf("\n mesg: %s", m)
+			}
+
+			// armado detalle de la carrera
+			carDet.Nombre = car.Nombre
+			carDet.Jockey = int(id_1)
 			carDet.Padre = strings.Trim(l2[30:80], " ")
-			carDet.Cuidador = strings.Trim(l2[80:], " ")
+			carDet.Cuidador = int(id_2)
 
-			//fmt.Printf("\n jockey: %s \n padre: %s \n cuidador: %s", carDet.Jockey, carDet.Padre, carDet.Cuidador)
+			// carga vector detalle
+			carDetVec = append(carDetVec, carDet)
 
 			flag2 = 0
 			flag3 = 0
@@ -211,38 +260,53 @@ func handlerTXT(ruta string, stdout string) (int, string) {
 
 		if strings.Contains(line, "Caballeriza") || flag4 == 1 {
 
+			if flag4 == 0 {
+				iii = strings.Index(line, "Entrenador")
+			}
+
 			flag2++
 			flag4 = 0
 
-			if nCarrera == nCarreras {
+			if nCarrera == nCarreras && li == int(totaLines) {
 
+				// fmt.Printf("\n nCarrera: %d \nCarreras: %d \nli: %d \ntotaLines: %d", nCarrera, nCarreras, li, int(totaLines))
 				car.Detalle = carDetVec
 				carVec = append(carVec, car)
 			}
 
 		}
 
-		// car.Detalle = carDetVec
-
 		if err := scanner.Err(); err != nil {
 			fmt.Println("Error reading file:", err)
+			return 0, "Error reading file"
+		}
+		// fmt.Printf("\n li: %d", li)
+	}
+
+	var msg string
+	var cars string
+
+	// carga de carreras en BD
+	// ki := len(carVec)
+	// fmt.Printf("\n\n\n carVec Len: %d \n", ki)
+
+	for _, v := range carVec {
+
+		// fmt.Printf("\n nombre: %s \nfecha: %s \ndistancia: %d ", v.Nombre, v.Fecha, v.Distancia)
+
+		res, msg := v.LoadDB()
+
+		cars = strconv.FormatInt(nCarreras, 10)
+
+		if res != 1 {
+			// fmt.Printf("\n carreras: %d", nCarreras)
+
+			return 0, msg + "\n carreras cargadas: " + cars
 		}
 
 	}
 
-	// for _, v := range carVec {
-
-	// 	fmt.Printf("\n nombre: %s \nfecha: %s \ndistancia: %d ", v.Nombre, v.Fecha, v.Distancia)
-
-	// 	for _, r := range v.Detalle {
-
-	// 		fmt.Printf("\n\n")
-	// 		fmt.Printf("\n nombre: %s \nhandicap: %s ", r.Nombre, r.Handicap)
-
-	// 	}
-	// }
-
-	return 1, "parsed file created successfully."
+	return 1, msg + "\n carreras cargadas: " + cars
 
 	// ********************************************************
 

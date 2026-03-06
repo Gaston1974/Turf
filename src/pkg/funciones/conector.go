@@ -45,9 +45,8 @@ type Acceso struct {
 
 func (a *Acceso) SetCliente() (context.Context, int, string) {
 
-	//postgresURI := os.Getenv("DBURL")
-	mysqlURI := os.Getenv("DBURL")
-	if mysqlURI == "" {
+	postgresURI := os.Getenv("DBURL")
+	if postgresURI == "" {
 		msg := "No URL variable is found on the environment"
 		fmt.Printf("%s", msg)
 		return nil, 0, msg
@@ -55,7 +54,7 @@ func (a *Acceso) SetCliente() (context.Context, int, string) {
 
 	ctx := context.Background()
 	var err error
-	a.Cliente, err = sql.Open("mysql", mysqlURI)
+	a.Cliente, err = sql.Open("postgres", postgresURI)
 
 	if err != nil {
 		msg := "No se ha logrado establecer conexion a la base de datos, intente mas tarde nuevamente. .."
